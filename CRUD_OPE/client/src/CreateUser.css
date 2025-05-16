@@ -55,15 +55,15 @@
 }
 
 .create-button:hover {
-  background-color: #2980b9;
+  background-color: #1571ae;
 }
 
 .error-message {
-  color: #080808;
+  color: rgb(18, 18, 32);
   text-align: center;
   font-weight: bold;
   padding: 10px;
-  background-color: #fadbd8;
+  background-color: #f8f6f5;
   border-radius: 4px;
   margin-bottom: 15px;
 }
