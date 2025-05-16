@@ -47,7 +47,7 @@ function CreateUser() {
       formData.append('email', email)
       formData.append('password', password)
       formData.append('age', age)
-      
+      // just for adding picture to the backend and displaying in the main page
       if (image) {
         formData.append('image', image)
       }
