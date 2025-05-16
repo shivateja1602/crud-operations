@@ -11,6 +11,11 @@ const UserSchema=new mongoose.Schema({
         required: true
     },
     age: Number,
+    role: {
+        type: String,
+        enum: ['user', 'admin', 'editor'],
+        default: 'user'
+    },
     imagePath: {
         type: String,
         default: ""

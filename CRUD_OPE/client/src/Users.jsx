@@ -8,6 +8,8 @@ function Users() {
     const [users, setUsers] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
+    const [searchQuery, setSearchQuery] = useState('')
+    const [isSearching, setIsSearching] = useState(false)
     
     const { isAuthenticated, user, logout } = useAuth()
     const navigate = useNavigate()
@@ -31,6 +33,35 @@ function Users() {
             setError("Failed to load users. Please try again.")
             setLoading(false)
         }
+    }
+
+    const searchUsers = async () => {
+        if (!searchQuery.trim()) {
+            fetchUsers()
+            return
+        }
+        
+        setIsSearching(true)
+        try {
+            const result = await axios.get(`http://localhost:3000/search?query=${searchQuery}`)
+            console.log("Search results:", result.data)
+            setUsers(result.data)
+        } catch (err) {
+            console.error("Error searching users:", err)
+            setError("Failed to search users. Please try again.")
+        } finally {
+            setIsSearching(false)
+        }
+    }
+
+    const handleSearch = (e) => {
+        e.preventDefault()
+        searchUsers()
+    }
+
+    const clearSearch = () => {
+        setSearchQuery('')
+        fetchUsers()
     }
 
     useEffect(() => {
@@ -70,18 +101,40 @@ function Users() {
                     <button onClick={handleLogout} className="logout-button">Logout</button>
                 </div>
             </div>
-            <Link to="/create" className="add-button">Add New User</Link>
+            
+            <div className="action-bar">
+                <Link to="/create" className="add-button">Add New User</Link>
+                <form onSubmit={handleSearch} className="search-form">
+                    <input
+                        type="text"
+                        placeholder="Search by name or email"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="search-input"
+                    />
+                    <button type="submit" className="search-button" disabled={isSearching}>
+                        {isSearching ? 'Searching...' : 'Search'}
+                    </button>
+                    {searchQuery && (
+                        <button type="button" onClick={clearSearch} className="clear-button">
+                            Clear
+                        </button>
+                    )}
+                </form>
+            </div>
             
             {users.length === 0 ? (
-                <div className="no-users">No users found. Add some users to get started.</div>
+                <div className="no-users">
+                    {searchQuery ? 'No users found matching your search.' : 'No users found. Add some users to get started.'}
+                </div>
             ) : (
                 <table className="users-table">
                     <thead>
                         <tr>
-                            <th>Profile</th>
-                            <th>Name</th>
+                            <th>Profile</th>                            <th>Name</th>
                             <th>Email</th>
                             <th>Age</th>
+                            <th>Role</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -100,10 +153,10 @@ function Users() {
                                             {user.name?.charAt(0).toUpperCase() || 'U'}
                                         </div>
                                     )}
-                                </td>
-                                <td>{user.name}</td>
+                                </td>                                <td>{user.name}</td>
                                 <td>{user.email}</td>
                                 <td>{user.age}</td>
+                                <td><span className={`role-badge ${user.role || 'user'}`}>{user.role || 'user'}</span></td>
                                 <td className="action-buttons">
                                     <Link to={`/update/${user._id}`} className="edit-button">Edit</Link>
                                     <button 

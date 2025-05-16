@@ -11,12 +11,13 @@ function LoginPage() {
   
   const { login } = useAuth();
   const navigate = useNavigate();
-  
-  const handleSubmit = async (e) => {
+    const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('Starting login process');
     
     // Simple validation
     if (!email || !password) {
+      console.log('Login validation failed: Missing email or password');
       setError('Email and password are required');
       return;
     }
@@ -25,14 +26,18 @@ function LoginPage() {
     setError(null);
     
     try {
+      console.log('Attempting login for email:', email);
       const result = await login(email, password);
       
       if (result.success) {
+        console.log('Login successful, navigating to home');
         navigate('/');
       } else {
+        console.error('Login failed:', result.message);
         setError(result.message);
       }
     } catch (err) {
+      console.error('Login error:', err);
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
@@ -71,16 +76,14 @@ function LoginPage() {
             disabled={loading}
           />
         </div>
-        
-        <button 
+          <button 
           type="submit" 
           className="auth-button"
           disabled={loading}
         >
           {loading ? 'Logging in...' : 'Login'}
         </button>
-        
-        <div className="auth-links">
+          <div className="auth-links">
           Don't have an account? <Link to="/register">Register</Link>
         </div>
       </form>

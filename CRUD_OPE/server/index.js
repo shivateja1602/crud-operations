@@ -14,6 +14,13 @@ app.use(cors())
 app.use(express.json())
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log('Created uploads directory');
+}
+
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -47,7 +54,20 @@ mongoose.connect("mongodb://127.0.0.1:27017/crud")
 // Auth routes
 app.post("/register", upload.single('image'), async (req, res) => {
   try {
-    const { name, email, password, age } = req.body
+    console.log("Register endpoint called with body:", req.body);
+    console.log("Register endpoint file:", req.file);
+    console.log("Headers:", req.headers);
+    
+    // Validate required fields
+    if (!req.body.name || !req.body.email || !req.body.password) {
+      return res.status(400).json({ message: "Name, email, and password are required" });
+    }
+    
+    const { name, email, password } = req.body;
+    const age = req.body.age ? parseInt(req.body.age) : 0;
+    const role = req.body.role || 'user';
+    
+    console.log("Processing registration with:", { name, email, age, role });
     
     // Check if user already exists
     const existingUser = await UserModel.findOne({ email })
@@ -57,16 +77,17 @@ app.post("/register", upload.single('image'), async (req, res) => {
     
     // Hash password
     const salt = await bcrypt.genSalt(10)
-    const hashedPassword = await bcrypt.hash(password, 10)
-    
-    // Create new user
+    const hashedPassword = await bcrypt.hash(password, 10)    // Create new user
     const newUser = {
       name,
       email,
       password: hashedPassword,
-      age,
+      age, // Age is already parsed to integer above
+      role, // Role is already set with default above
       imagePath: req.file ? `/uploads/${req.file.filename}` : ""
     }
+    
+    console.log("Creating new user:", { ...newUser, password: "[HIDDEN]" });
     
     const user = await UserModel.create(newUser)
     
@@ -76,20 +97,32 @@ app.post("/register", upload.single('image'), async (req, res) => {
       JWT_SECRET,
       { expiresIn: '1h' }
     )
-    
-    res.status(201).json({
+      res.status(201).json({
       token,
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
         age: user.age,
+        role: user.role,
         imagePath: user.imagePath
       }
-    })
-  } catch (error) {
-    console.error("Registration error:", error)
-    res.status(500).json({ message: "Registration failed", error: error.message })
+    })  } catch (error) {
+    console.error("Registration error:", error);
+    console.error("Error stack:", error.stack);
+    
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ 
+        message: "Validation error", 
+        errors: error.errors 
+      });
+    }
+    
+    res.status(500).json({ 
+      message: "Registration failed", 
+      error: error.message,
+      details: error.toString()
+    });
   }
 })
 
@@ -115,14 +148,14 @@ app.post("/login", async (req, res) => {
       JWT_SECRET,
       { expiresIn: '1h' }
     )
-    
-    res.json({
+      res.json({
       token,
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
         age: user.age,
+        role: user.role,
         imagePath: user.imagePath
       }
     })
@@ -135,7 +168,7 @@ app.post("/login", async (req, res) => {
 // Protected routes - require authentication
 app.post("/createUser", verifyToken, upload.single('image'), async (req, res) => {
   try {
-    const { name, email, password, age } = req.body
+    const { name, email, password, age, role } = req.body
     
     // Hash password
     const salt = await bcrypt.genSalt(10)
@@ -146,6 +179,7 @@ app.post("/createUser", verifyToken, upload.single('image'), async (req, res) =>
       email,
       password: hashedPassword,
       age,
+      role: role || 'user',
       imagePath: req.file ? `/uploads/${req.file.filename}` : ""
     }
     
@@ -164,6 +198,28 @@ app.get("/users", verifyToken, async (req, res) => {
   } catch (error) {
     console.error("Error fetching users:", error)
     res.status(500).json({ message: "Failed to fetch users", error: error.message })
+  }
+})
+
+// Search endpoint for users
+app.get("/search", verifyToken, async (req, res) => {
+  try {
+    const { query } = req.query;
+    if (!query) {
+      return res.status(400).json({ message: "Search query is required" });
+    }
+
+    const users = await UserModel.find({
+      $or: [
+        { name: { $regex: query, $options: 'i' } },
+        { email: { $regex: query, $options: 'i' } }
+      ]
+    }, { password: 0 }); // Exclude password
+
+    res.json(users);
+  } catch (error) {
+    console.error("Error searching users:", error);
+    res.status(500).json({ message: "Failed to search users", error: error.message });
   }
 })
 
@@ -186,9 +242,14 @@ app.get('/getUser/:id', verifyToken, async (req, res) => {
 app.put('/updateUser/:id', verifyToken, upload.single('image'), async (req, res) => {
   try {
     const { id } = req.params
-    const { name, email, age, password } = req.body
+    const { name, email, age, password, role } = req.body
     
     const updateData = { name, email, age }
+    
+    // Add role if provided
+    if (role) {
+      updateData.role = role
+    }
     
     // If password is provided, hash it
     if (password) {
@@ -209,21 +270,31 @@ app.put('/updateUser/:id', verifyToken, upload.single('image'), async (req, res)
       }
       updateData.imagePath = `/uploads/${req.file.filename}`
     }
+      // Add debugging logs
+    console.log("Update data:", updateData);
+    console.log("User ID:", id);
     
-    const user = await UserModel.findByIdAndUpdate(
-      id, 
-      updateData,
-      { new: true, select: '-password' } // Return updated doc without password
-    )
-    
-    if (!user) {
-      return res.status(404).json({ message: "User not found" })
+    try {
+      const user = await UserModel.findByIdAndUpdate(
+        id, 
+        updateData,
+        { new: true, select: '-password' } // Return updated doc without password
+      )
+      
+      if (!user) {
+        console.error("User not found for update");
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      console.log("Update successful, returning user:", user);
+      res.json(user);
+    } catch (dbError) {
+      console.error("Database error during update:", dbError);
+      return res.status(500).json({ message: "Database error during update", error: dbError.message });
     }
-    
-    res.json(user)
   } catch (error) {
-    console.error("Error updating user:", error)
-    res.status(500).json({ message: "Failed to update user", error: error.message })
+    console.error("Error updating user:", error);
+    res.status(500).json({ message: "Failed to update user", error: error.message });
   }
 })
 
@@ -253,6 +324,8 @@ app.delete('/deleteUser/:id', verifyToken, async (req, res) => {
     res.status(500).json({ message: "Failed to delete user", error: error.message })
   }
 })
+
+// Start server
 
 // Start server
 app.listen(3000, () => {

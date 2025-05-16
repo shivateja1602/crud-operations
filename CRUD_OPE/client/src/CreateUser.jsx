@@ -9,6 +9,7 @@ function CreateUser() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [age, setAge] = useState('')
+  const [role, setRole] = useState('user')
   const [image, setImage] = useState(null)
   const [previewUrl, setPreviewUrl] = useState('')
   const [error, setError] = useState(null)
@@ -37,17 +38,15 @@ function CreateUser() {
       setError("All fields are required")
       return
     }
-    
-    setLoading(true)
+      setLoading(true)
     
     try {
-      // Create form data to handle file upload
       const formData = new FormData()
       formData.append('name', name)
       formData.append('email', email)
       formData.append('password', password)
       formData.append('age', age)
-      // just for adding picture to the backend and displaying in the main page
+      formData.append('role', role)
       if (image) {
         formData.append('image', image)
       }
@@ -114,8 +113,7 @@ function CreateUser() {
             onChange={(e) => setPassword(e.target.value)} 
             disabled={loading}
           />
-        </div>
-        <div className="form-group">
+        </div>        <div className="form-group">
           <label htmlFor="age">Age</label>
           <input 
             type="number" 
@@ -126,6 +124,21 @@ function CreateUser() {
             onChange={(e) => setAge(e.target.value)}
             disabled={loading}
           />
+        </div>
+        <div className="form-group">
+          <label htmlFor="role">Role</label>
+          <select
+            className="form-control"
+            name="role"
+            id="role"
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            disabled={loading}
+          >
+            <option value="user">User</option>
+            <option value="editor">Editor</option>
+            <option value="admin">Admin</option>
+          </select>
         </div>
         <div className="form-group">
           <label htmlFor="image">Profile Image</label>

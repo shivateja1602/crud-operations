@@ -66,20 +66,27 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData, image) => {
     try {
+      console.log("Starting registration with data:", { ...userData, password: "[HIDDEN]" });
+      
+      // Create form data
       const formData = new FormData();
       formData.append('name', userData.name);
       formData.append('email', userData.email);
       formData.append('password', userData.password);
-      formData.append('age', userData.age);
+      formData.append('age', userData.age || '0');
+      formData.append('role', userData.role || 'user');
       
       if (image) {
+        console.log("Attaching image:", image.name, image.type, image.size);
         formData.append('image', image);
       }
       
+      console.log("Sending registration request");
       const response = await axios.post('http://localhost:3000/register', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
-        }
+        },
+        timeout: 10000 // 10 seconds timeout
       });
       
       const { token, user } = response.data;
@@ -89,13 +96,29 @@ export const AuthProvider = ({ children }) => {
       
       setToken(token);
       setUser(user);
-      
-      return { success: true };
+        return { success: true };
     } catch (error) {
       console.error('Registration error:', error);
+      if (error.response) {
+        console.error('Server response data:', error.response.data);
+        console.error('Server response status:', error.response.status);      } else if (error.request) {
+        console.error('No response received from server');
+      } else {
+        console.error('Error setting up request:', error.message);
+      }
+      
+      // Create a more descriptive error message
+      let errorMessage = 'Registration failed. Please try again.';
+      
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = `Error: ${error.message}`;
+      }
+      
       return { 
         success: false, 
-        message: error.response?.data?.message || 'Registration failed. Please try again.' 
+        message: errorMessage
       };
     }
   };

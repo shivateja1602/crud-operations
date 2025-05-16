@@ -10,6 +10,7 @@ function UpdateUser() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [age, setAge] = useState('')
+  const [role, setRole] = useState('user')
   const [image, setImage] = useState(null)
   const [currentImagePath, setCurrentImagePath] = useState('')
   const [previewUrl, setPreviewUrl] = useState('')
@@ -35,6 +36,7 @@ function UpdateUser() {
         setName(result.data.name)
         setEmail(result.data.email)
         setAge(result.data.age)
+        setRole(result.data.role || 'user')
         
         if (result.data.imagePath) {
           setCurrentImagePath(result.data.imagePath)
@@ -74,23 +76,32 @@ function UpdateUser() {
     }
     
     setUpdating(true)
-    
-    try {
+      try {
       // Create form data to handle file upload
       const formData = new FormData()
       formData.append('name', name)
       formData.append('email', email)
       formData.append('age', age)
+      formData.append('role', role)
       
       // Only include password if it was changed
       if (password) {
         formData.append('password', password)
       }
-      
-      // Only include image if a new one was selected
+        // Only include image if a new one was selected
       if (image) {
         formData.append('image', image)
       }
+      
+      // Debug log what we're sending
+      console.log("Sending form data:", {
+        name,
+        email,
+        age,
+        role,
+        passwordIncluded: !!password,
+        imageIncluded: !!image
+      });
       
       const response = await axios.put(
         `http://localhost:3000/updateUser/${id}`, 
@@ -102,12 +113,28 @@ function UpdateUser() {
           }
         }
       )
-      
-      console.log("Update successful:", response.data)
-      navigate('/')
-    } catch (err) {
+        console.log("Update successful:", response.data)
+      navigate('/')    } catch (err) {
       console.error("Update failed:", err)
-      setError(err.response?.data?.message || "Failed to update user. Please try again.")
+      
+      // More detailed error logging
+      if (err.response) {
+        console.error("Response data:", err.response.data)
+        console.error("Response status:", err.response.status)
+        console.error("Response headers:", err.response.headers)
+        setError(err.response.data.message || "Failed to update user. Please try again.")
+      } else if (err.request) {
+        console.error("No response received:", err.request)
+        setError("No response from server. Please check your connection.")
+      } else {
+        console.error("Request setup error:", err.message)
+        setError("Failed to send request. Please try again.")
+      }
+      
+      // Display error message to user in a more friendly way
+      const errorMessage = err.response?.data?.message || 
+                         "Failed to update user. Please check your connection and try again.";
+      setError(errorMessage);
     } finally {
       setUpdating(false)
     }
@@ -158,8 +185,7 @@ function UpdateUser() {
             onChange={(e) => setPassword(e.target.value)}
             disabled={updating}
           />
-        </div>
-        <div className="form-group">
+        </div>        <div className="form-group">
           <label htmlFor="age">Age</label>
           <input 
             type="number" 
@@ -171,6 +197,21 @@ function UpdateUser() {
             onChange={(e) => setAge(e.target.value)}
             disabled={updating}
           />
+        </div>
+        <div className="form-group">
+          <label htmlFor="role">Role</label>
+          <select
+            className="form-control"
+            name="role"
+            id="role"
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            disabled={updating}
+          >
+            <option value="user">User</option>
+            <option value="editor">Editor</option>
+            <option value="admin">Admin</option>
+          </select>
         </div>
         <div className="form-group">
           <label htmlFor="image">Profile Image</label>

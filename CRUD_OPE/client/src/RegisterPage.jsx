@@ -9,6 +9,7 @@ function RegisterPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [age, setAge] = useState('');
+  const [role, setRole] = useState('user');
   const [image, setImage] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
   const [error, setError] = useState(null);
@@ -29,17 +30,19 @@ function RegisterPage() {
       reader.readAsDataURL(file);
     }
   };
-  
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('Starting registration process');
     
     // Validation
     if (!name || !email || !password || !age) {
+      console.log('Validation failed: Missing required fields');
       setError('All fields are required');
       return;
     }
     
     if (password !== confirmPassword) {
+      console.log('Validation failed: Passwords do not match');
       setError('Passwords do not match');
       return;
     }
@@ -48,15 +51,22 @@ function RegisterPage() {
     setError(null);
     
     try {
-      const userData = { name, email, password, age };
+      console.log('Preparing user data for registration');
+      const userData = { name, email, password, age, role };
+      console.log('Calling register function with image:', image ? 'Image selected' : 'No image');
+      
       const result = await register(userData, image);
+      console.log('Registration result:', { success: result.success });
       
       if (result.success) {
+        console.log('Registration successful, navigating to home');
         navigate('/');
       } else {
+        console.error('Registration failed:', result.message);
         setError(result.message);
       }
     } catch (err) {
+      console.error('Registration error:', err);
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
