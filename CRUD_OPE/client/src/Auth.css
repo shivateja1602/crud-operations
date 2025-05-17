@@ -1,4 +1,3 @@
-/* Base styles */
 body {
   background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
   min-height: 100vh;
@@ -204,14 +203,12 @@ input[type="file"]::-webkit-file-upload-button:hover {
   box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
 }
 
-/* Animations */
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   20%, 60% { transform: translateX(-4px); }
   40%, 80% { transform: translateX(4px); }
 }
 
-/* Responsive Design */
 @media (max-width: 600px) {
   .auth-container {
     margin: 20px;

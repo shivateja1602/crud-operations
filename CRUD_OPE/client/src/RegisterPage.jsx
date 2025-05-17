@@ -31,16 +31,16 @@ function RegisterPage() {
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Starting registration process');
+    
     
     if (!name || !email || !password || !age) {
-      console.log('Validation failed: Missing required fields');
+  
       setError('All fields are required');
       return;
     }
     
     if (password !== confirmPassword) {
-      console.log('Validation failed: Passwords do not match');
+
       setError('Passwords do not match');
       return;
     }
@@ -48,23 +48,12 @@ function RegisterPage() {
     setLoading(true);
     setError(null);
     
-    try {
-      console.log('Preparing user data for registration');
-      const userData = { name, email, password, age, role };
-      console.log('Calling register function with image:', image ? 'Image selected' : 'No image');
+    try {      const userData = { name, email, password, age, role };
       
-      const result = await register(userData, image);
-      console.log('Registration result:', { success: result.success });
-      
-      if (result.success) {
-        console.log('Registration successful, navigating to home');
-        navigate('/');
-      } else {
-        console.error('Registration failed:', result.message);
+      const result = await register(userData, image);      if (result.success) {
+        navigate('/');      } else {
         setError(result.message);
-      }
-    } catch (err) {
-      console.error('Registration error:', err);
+      }    } catch (err) {
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
