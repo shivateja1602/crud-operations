@@ -22,7 +22,6 @@ function RegisterPage() {
     const file = e.target.files[0];
     if (file) {
       setImage(file);
-      // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviewUrl(reader.result);
@@ -34,7 +33,7 @@ function RegisterPage() {
     e.preventDefault();
     console.log('Starting registration process');
     
-    // Validation
+ 
     if (!name || !email || !password || !age) {
       console.log('Validation failed: Missing required fields');
       setError('All fields are required');
