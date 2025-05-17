@@ -58,7 +58,6 @@ function UpdateUser() {
     const file = e.target.files[0]
     if (file) {
       setImage(file)
-      // Create preview
       const reader = new FileReader()
       reader.onloadend = () => {
         setPreviewUrl(reader.result)
@@ -77,7 +76,6 @@ function UpdateUser() {
     
     setUpdating(true)
       try {
-      // Create form data to handle file upload
       const formData = new FormData()
       formData.append('name', name)
       formData.append('email', email)
@@ -142,7 +140,7 @@ function UpdateUser() {
 
   if (loading) return <div className="update-container"><p>Loading user data...</p></div>
   if (error) return <div className="update-container"><p className="error-message">{error}</p></div>
-
+// Return the container back after the update
   return (
     <div className="update-container">
       <form onSubmit={Update}>
@@ -160,6 +158,7 @@ function UpdateUser() {
             disabled={updating}
           />
         </div>
+       {/* Adding the inputs */}
         <div className="form-group">
           <label htmlFor="email">Email</label>
           <input 

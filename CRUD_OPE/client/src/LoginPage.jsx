@@ -15,7 +15,6 @@ function LoginPage() {
     e.preventDefault();
     console.log('Starting login process');
     
-    // Simple validation
     if (!email || !password) {
       console.log('Login validation failed: Missing email or password');
       setError('Email and password are required');
