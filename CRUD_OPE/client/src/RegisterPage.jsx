@@ -33,6 +33,7 @@ function RegisterPage() {
     e.preventDefault();
     
     
+    // Validation
     if (!name || !email || !password || !age) {
   
       setError('All fields are required');
