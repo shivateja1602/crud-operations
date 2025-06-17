@@ -69,13 +69,11 @@ app.post("/register", upload.single('image'), async (req, res) => {
     
     console.log("Processing registration with:", { name, email, age, role });
     
-    // Check if user already exists
     const existingUser = await UserModel.findOne({ email })
     if (existingUser) {
       return res.status(400).json({ message: "User with this email already exists" })
     }
     
-    // Hash password
     const salt = await bcrypt.genSalt(10)
     const hashedPassword = await bcrypt.hash(password, 10)    // Create new user
     const newUser = {
@@ -91,7 +89,6 @@ app.post("/register", upload.single('image'), async (req, res) => {
     
     const user = await UserModel.create(newUser)
     
-    // Generate JWT token
     const token = jwt.sign(
       { id: user._id, email: user.email }, 
       JWT_SECRET,
@@ -130,19 +127,16 @@ app.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body
     
-    // Find user
     const user = await UserModel.findOne({ email })
     if (!user) {
       return res.status(401).json({ message: "Invalid email or password" })
     }
     
-    // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password)
     if (!isPasswordValid) {
       return res.status(401).json({ message: "Invalid email or password" })
     }
     
-    // Generate JWT token
     const token = jwt.sign(
       { id: user._id, email: user.email }, 
       JWT_SECRET,
@@ -165,12 +159,10 @@ app.post("/login", async (req, res) => {
   }
 })
 
-// Protected routes - require authentication
 app.post("/createUser", verifyToken, upload.single('image'), async (req, res) => {
   try {
     const { name, email, password, age, role } = req.body
     
-    // Hash password
     const salt = await bcrypt.genSalt(10)
     const hashedPassword = await bcrypt.hash(password, 10)
     
@@ -201,7 +193,6 @@ app.get("/users", verifyToken, async (req, res) => {
   }
 })
 
-// Search endpoint for users
 app.get("/search", verifyToken, async (req, res) => {
   try {
     const { query } = req.query;
